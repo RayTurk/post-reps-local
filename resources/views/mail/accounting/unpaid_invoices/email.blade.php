@@ -1,0 +1,42 @@
+@component('mail::message')
+
+<style>
+    p {
+        color: #000;
+    }
+</style>
+
+# Hello,
+
+<p>
+    This is a reminder that you have an UNPAID invoice.
+    Please see details below.
+</p>
+
+<p>
+    Invoice Date: <span>{{ $invoice->created_at->format('m/d/Y') }}</span>
+</p>
+
+<p>
+    Invoice #: <span>{{ $invoice->invoice_number }}</span>
+</p>
+
+<p>
+    Amount Due: <span>$ {{ $invoice->amount }}</span>
+</p>
+
+<p>
+    For further information, you can verify the status and invoice details by
+    clicking the link below. Please be sure to make your payment on time. 
+	Any unpaid balance not received by the due date is subject to a $5 or 5% 
+	late fee, whichever is larger. These terms and conditions are subject to
+	change without notice. Be sure to review the terms and conditions frequently. 
+</p>
+
+ <p>Regards,</p>
+ <p>The PostReps Team</p>
+ <p>(208)546-5546</p>
+
+<a href="{{url('/accounting/unpaid/invoices')}}" target="_blank">Click here for invoice details.</a>
+
+@endcomponent
