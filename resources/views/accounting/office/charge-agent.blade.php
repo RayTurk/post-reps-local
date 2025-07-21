@@ -344,6 +344,19 @@
       checkFormValidity();
     });
 
+    // Right after the payment method toggle, add this code to ensure the correct section is shown on page load
+    (function() {
+      const method = $('input[name="payment_method"]:checked').val();
+
+      if (method === 'saved_card') {
+        $('#savedCardSection').show();
+        $('#newCardSection').hide();
+      } else {
+        $('#savedCardSection').hide();
+        $('#newCardSection').show();
+      }
+    })();
+
     // Format card number
     $('#card_number').on('input', function() {
       let value = $(this).val().replace(/\s/g, '').replace(/\D/g, '');
