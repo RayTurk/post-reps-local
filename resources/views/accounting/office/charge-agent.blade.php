@@ -376,9 +376,14 @@
     function checkFormValidity() {
       const agentSelected = $('#agent_id').val() !== '';
       const amountValid = parseFloat($('#amount').val()) > 0;
-      const paymentValid = $('#payment_method').val() === 'saved_card' ?
-        selectedPaymentProfileId !== null :
-        validateNewCardFields();
+      const paymentMethod = $('input[name="payment_method"]:checked').val();
+      let paymentValid = false;
+
+      if (paymentMethod === 'saved_card') {
+        paymentValid = selectedPaymentProfileId !== null && selectedPaymentProfileId !== '';
+      } else {
+        paymentValid = validateNewCardFields();
+      }
 
       $('#submitBtn').prop('disabled', !(agentSelected && amountValid && paymentValid));
     }
