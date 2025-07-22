@@ -130,7 +130,7 @@
                   <div class="form-group">
                     <label for="card_number">Card Number <span class="text-danger">*</span></label>
                     <input type="text" name="card_number" id="card_number" class="form-control @error('card_number') is-invalid @enderror"
-                      placeholder="1234 5678 9012 3456" maxlength="19" value="{{ old('card_number') }}">
+                      placeholder="1234 5678 9012 3456" maxlength="19" value="{{ old('card_number') }}" disabled>
                     @error('card_number')
                     <div class="invalid-feedback">{{ $message }}</div>
                     @enderror
@@ -140,7 +140,7 @@
                 <div class="col-md-3">
                   <div class="form-group">
                     <label for="expire_month">Exp Month <span class="text-danger">*</span></label>
-                    <select name="expire_month" id="expire_month" class="form-control @error('expire_month') is-invalid @enderror">
+                    <select name="expire_month" id="expire_month" class="form-control @error('expire_month') is-invalid @enderror" disabled>
                       <option value="">Month</option>
                       @for($i = 1; $i <= 12; $i++)
                         <option value="{{ $i }}" {{ old('expire_month') == $i ? 'selected' : '' }}>
@@ -157,7 +157,7 @@
                 <div class="col-md-3">
                   <div class="form-group">
                     <label for="expire_year">Exp Year <span class="text-danger">*</span></label>
-                    <select name="expire_year" id="expire_year" class="form-control @error('expire_year') is-invalid @enderror">
+                    <select name="expire_year" id="expire_year" class="form-control @error('expire_year') is-invalid @enderror" disabled>
                       <option value="">Year</option>
                       @for($i = date('Y'); $i <= date('Y') + 10; $i++)
                         <option value="{{ $i }}" {{ old('expire_year') == $i ? 'selected' : '' }}>{{ $i }}</option>
@@ -175,7 +175,7 @@
                   <div class="form-group">
                     <label for="card_code">CVV <span class="text-danger">*</span></label>
                     <input type="text" name="card_code" id="card_code" class="form-control @error('card_code') is-invalid @enderror"
-                      placeholder="123" maxlength="4" value="{{ old('card_code') }}">
+                      placeholder="123" maxlength="4" value="{{ old('card_code') }}" disabled>
                     @error('card_code')
                     <div class="invalid-feedback">{{ $message }}</div>
                     @enderror
@@ -186,7 +186,7 @@
                   <div class="form-group">
                     <label for="billing_name">Cardholder Name <span class="text-danger">*</span></label>
                     <input type="text" name="billing_name" id="billing_name" class="form-control @error('billing_name') is-invalid @enderror"
-                      placeholder="John Doe" value="{{ old('billing_name') }}">
+                      placeholder="John Doe" value="{{ old('billing_name') }}" disabled>
                     @error('billing_name')
                     <div class="invalid-feedback">{{ $message }}</div>
                     @enderror
@@ -200,7 +200,7 @@
                   <div class="form-group">
                     <label for="billing_address">Billing Address <span class="text-danger">*</span></label>
                     <input type="text" name="billing_address" id="billing_address" class="form-control @error('billing_address') is-invalid @enderror"
-                      placeholder="123 Main St" value="{{ old('billing_address') }}">
+                      placeholder="123 Main St" value="{{ old('billing_address') }}" disabled>
                     @error('billing_address')
                     <div class="invalid-feedback">{{ $message }}</div>
                     @enderror
@@ -211,7 +211,7 @@
                   <div class="form-group">
                     <label for="billing_city">City <span class="text-danger">*</span></label>
                     <input type="text" name="billing_city" id="billing_city" class="form-control @error('billing_city') is-invalid @enderror"
-                      placeholder="Anytown" value="{{ old('billing_city') }}">
+                      placeholder="Anytown" value="{{ old('billing_city') }}" disabled>
                     @error('billing_city')
                     <div class="invalid-feedback">{{ $message }}</div>
                     @enderror
@@ -223,7 +223,7 @@
                 <div class="col-md-4">
                   <div class="form-group">
                     <label for="billing_state">State <span class="text-danger">*</span></label>
-                    <select name="billing_state" id="billing_state" class="form-control @error('billing_state') is-invalid @enderror">
+                    <select name="billing_state" id="billing_state" class="form-control @error('billing_state') is-invalid @enderror" disabled>
                       <option value="">-- Select State --</option>
                       @foreach(['AL','AK','AZ','AR','CA','CO','CT','DE','FL','GA','HI','ID','IL','IN','IA','KS','KY','LA','ME','MD','MA','MI','MN','MS','MO','MT','NE','NV','NH','NJ','NM','NY','NC','ND','OH','OK','OR','PA','RI','SC','SD','TN','TX','UT','VT','VA','WA','WV','WI','WY'] as $state)
                       <option value="{{ $state }}" {{ old('billing_state') == $state ? 'selected' : '' }}>{{ $state }}</option>
@@ -239,7 +239,7 @@
                   <div class="form-group">
                     <label for="billing_zip">ZIP Code <span class="text-danger">*</span></label>
                     <input type="text" name="billing_zip" id="billing_zip" class="form-control @error('billing_zip') is-invalid @enderror"
-                      placeholder="12345" value="{{ old('billing_zip') }}">
+                      placeholder="12345" value="{{ old('billing_zip') }}" disabled>
                     @error('billing_zip')
                     <div class="invalid-feedback">{{ $message }}</div>
                     @enderror
@@ -249,7 +249,7 @@
                 <div class="col-md-4">
                   <div class="form-group">
                     <div class="form-check mt-4">
-                      <input type="checkbox" name="save_card" id="save_card" class="form-check-input" value="1">
+                      <input type="checkbox" name="save_card" id="save_card" class="form-check-input" value="1" disabled>
                       <label class="form-check-label" for="save_card">
                         Save this card for future use
                       </label>
@@ -285,90 +285,74 @@
 @section('scripts')
 <script>
   $(document).ready(function() {
-    let selectedPaymentProfileId = null;
+    const savedCardsSelect = $('#saved_cards');
+    const newCardSection = $('#newCardSection');
+    const savedCardSection = $('#savedCardSection');
+    const newCardFields = newCardSection.find('input, select');
+    const submitBtn = $('#submitBtn');
+
+    function toggleNewCardFields(enable) {
+      newCardFields.prop('disabled', !enable);
+    }
+
+    function updateFormDisplay(paymentMethod) {
+      if (paymentMethod === 'new_card') {
+        savedCardSection.hide();
+        newCardSection.show();
+        toggleNewCardFields(true);
+      } else {
+        newCardSection.hide();
+        savedCardSection.show();
+        toggleNewCardFields(false);
+      }
+      checkFormValidity();
+    }
 
     // Agent selection change
     $('#agent_id').on('change', function() {
       const agentId = $(this).val();
-      const savedCardsSelect = $('#saved_cards');
-
       savedCardsSelect.html('<option value="">Loading...</option>');
-      selectedPaymentProfileId = null;
       checkFormValidity();
 
       if (agentId) {
         $.get(`{{ url('/accounting/office/charge-agent/get-cards') }}/${agentId}`)
           .done(function(cards) {
             savedCardsSelect.html('<option value="">-- Select Card --</option>');
-
             if (cards && cards.length > 0) {
               $.each(cards, function(index, card) {
                 savedCardsSelect.append(`
-                                <option value="${card.payment_profile_id}"
-                                        data-auth-profile="${card.authorizenet_profile_id}">
-                                    ${card.cardType} **** ${card.cardNumber.slice(-4)} (Exp: ${card.expDate})
-                                </option>
-                            `);
+                  <option value="${card.payment_profile_id}" data-auth-profile="${card.authorizenet_profile_id}">
+                    ${card.cardType} **** ${card.cardNumber.slice(-4)} (Exp: ${card.expDate})
+                  </option>
+                `);
               });
+              savedCardsSelect.prop('disabled', false);
             } else {
-              savedCardsSelect.append('<option value="">No saved cards available</option>');
+              savedCardsSelect.html('<option value="">No saved cards available</option>');
+              savedCardsSelect.prop('disabled', true);
             }
           })
           .fail(function(xhr) {
             console.error('Error loading cards:', xhr.responseText);
             savedCardsSelect.html('<option value="">Error loading cards</option>');
+            savedCardsSelect.prop('disabled', true);
           });
       } else {
         savedCardsSelect.html('<option value="">-- Select Agent First --</option>');
+        savedCardsSelect.prop('disabled', true);
       }
-    });
-
-    // Saved card selection
-    $('#saved_cards').on('change', function() {
-      selectedPaymentProfileId = $(this).val();
-      checkFormValidity();
     });
 
     // Payment method toggle
     $('input[name="payment_method"]').on('change', function() {
-      const method = $(this).val();
-
-      if (method === 'saved_card') {
-        $('#savedCardSection').show();
-        $('#newCardSection').hide();
-      } else {
-        $('#savedCardSection').hide();
-        $('#newCardSection').show();
-      }
-
-      checkFormValidity();
+      updateFormDisplay($(this).val());
     });
-
-    // Right after the payment method toggle, add this code to ensure the correct section is shown on page load
-    (function() {
-      const method = $('input[name="payment_method"]:checked').val();
-
-      if (method === 'saved_card') {
-        $('#savedCardSection').show();
-        $('#newCardSection').hide();
-      } else {
-        $('#savedCardSection').hide();
-        $('#newCardSection').show();
-      }
-    })();
 
     // Format card number
     $('#card_number').on('input', function() {
       let value = $(this).val().replace(/\s/g, '').replace(/\D/g, '');
       let formattedValue = value.replace(/(.{4})/g, '$1 ').trim();
       if (formattedValue.length > 19) formattedValue = formattedValue.substr(0, 19);
-      $(this).val(formattedValue);
-    });
-
-    // Format amount input
-    $('#amount').on('input', function() {
-      let value = $(this).val();
-      let formattedValue = value.replace(/[^0-9.]/g, '').match(/\d+\.?\d{0,2}/)?.[0] || value;
       $(this).val(formattedValue);
     });
 
@@ -380,17 +364,17 @@
       let paymentValid = false;
 
       if (paymentMethod === 'saved_card') {
-        paymentValid = selectedPaymentProfileId !== null && selectedPaymentProfileId !== '';
+        paymentValid = savedCardsSelect.val() !== '' && savedCardsSelect.val() !== null;
       } else {
         paymentValid = validateNewCardFields();
       }
 
-      $('#submitBtn').prop('disabled', !(agentSelected && amountValid && paymentValid));
+      submitBtn.prop('disabled', !(agentSelected && amountValid && paymentValid));
     }
 
     // Validate new card fields
     function validateNewCardFields() {
-      if (!$('#useNewCard').is(':checked')) return true;
+      if (!$('#useNewCard').is(':checked')) return false;
 
       const requiredFields = [
         '#card_number', '#expire_month', '#expire_year',
@@ -401,30 +385,29 @@
       for (let field of requiredFields) {
         if (!$(field).val()) return false;
       }
-
       return true;
     }
 
     // Monitor form changes
-    $('#amount, #card_number, #expire_month, #expire_year, #card_code, #billing_name, #billing_address, #billing_city, #billing_state, #billing_zip').on('input change', checkFormValidity);
+    $('#chargeAgentForm').on('input change', 'input, select', checkFormValidity);
+
 
     // Form submission
     $('#chargeAgentForm').on('submit', function(e) {
       e.preventDefault();
 
       const amount = parseFloat($('#amount').val());
-      const agentName = $('#agent_id option:selected').text();
+      const agentName = $('#agent_id option:selected').text().trim();
 
       if (confirm(`Are you sure you want to charge $${amount.toFixed(2)} to ${agentName}?`)) {
-        $('#submitBtn').prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Processing...');
+        submitBtn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Processing...');
         this.submit();
       }
     });
 
-    // Initialize form if agent is pre-selected
-    if ($('#agent_id').val()) {
-      $('#agent_id').trigger('change');
-    }
+    // Initial setup
+    updateFormDisplay($('input[name="payment_method"]:checked').val());
+    $('#agent_id').trigger('change');
   });
 </script>
 @endsection
