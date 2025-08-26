@@ -30,114 +30,120 @@ class AuthorizeNetService
 
   public function template()
   {
-    return json_decode('{
-            "createTransactionRequest": {
-                "merchantAuthentication": {
-                    "name": "5KP3u95bQpv",
-                    "transactionKey": "346HZ32z3fP4hTG2"
-                },
-                 "transactionRequest": {
-                    "transactionType": "authOnlyTransaction",
-                    "amount": "5",
-                    "payment": {
-                        "creditCard": {
-                            "cardNumber": "5424000000000015",
-                            "expirationDate": "2025-12",
-                            "cardCode": "999"
-                        }
-                    },
-                    "order": {
-                        "invoiceNumber": "656565"
-                    },
-                    "tax": {
-                        "amount": "0",
-                        "name": "No tax",
-                        "description": "No Tax"
-                    },
-                    "billTo": {
-                        "firstName": "Ellen",
-                        "lastName": "Johnson",
-                        "company": "Souveniropolis",
-                        "address": "14 Main Street",
-                        "city": "Pecan Springs",
-                        "state": "TX",
-                        "zip": "44628",
-                        "country": "US"
-                    },
-                    "authorizationIndicatorType": {
-                        "authorizationIndicator": "final"
-                    }
-                }
-            }
-        }');
+    $template = [
+      "createTransactionRequest" => [
+        "merchantAuthentication" => [
+          "name" => config('authorizenet.login_id'),
+          "transactionKey" => config('authorizenet.transaction_key')
+        ],
+        "transactionRequest" => [
+          "transactionType" => "authOnlyTransaction",
+          "amount" => "5",
+          "payment" => [
+            "creditCard" => [
+              "cardNumber" => "5424000000000015",
+              "expirationDate" => "2025-12",
+              "cardCode" => "999"
+            ]
+          ],
+          "order" => [
+            "invoiceNumber" => "656565"
+          ],
+          "tax" => [
+            "amount" => "0",
+            "name" => "No tax",
+            "description" => "No Tax"
+          ],
+          "billTo" => [
+            "firstName" => "Ellen",
+            "lastName" => "Johnson",
+            "company" => "Souveniropolis",
+            "address" => "14 Main Street",
+            "city" => "Pecan Springs",
+            "state" => "TX",
+            "zip" => "44628",
+            "country" => "US"
+          ],
+          "authorizationIndicatorType" => [
+            "authorizationIndicator" => "final"
+          ]
+        ]
+      ]
+    ];
+
+    return json_decode(json_encode($template));
   }
 
   public function createProfileTemplate()
   {
-    return json_decode('{
-            "createCustomerProfileRequest": {
-                "merchantAuthentication": {
-                    "name": "4U6Br3P7kUef",
-                    "transactionKey": "2vYc9v3t93qA3MkX"
-                },
-                "profile": {
-                    "merchantCustomerId": "Merchant_Customer_ID",
-                    "description": "Profile description here",
-                    "email": "customer-profile-email@here.com",
-                    "paymentProfiles": {
-                        "customerType": "individual",
-                        "billTo": {
-                            "firstName": "John",
-                            "lastName": "Doe",
-                            "address": "25 weldon st",
-                            "city": "Boise",
-                            "state": "Idaho",
-                            "zip": "99999"
-                        },
-                        "payment": {
-                            "creditCard": {
-                                "cardNumber": "4111111111111111",
-                                "expirationDate": "2025-12"
-                            }
-                        }
-                    }
-                },
-                "validationMode": "liveMode"
-            }
-        }');
+    $template = [
+      "createCustomerProfileRequest" => [
+        "merchantAuthentication" => [
+          "name" => config('authorizenet.login_id'),
+          "transactionKey" => config('authorizenet.transaction_key')
+        ],
+        "profile" => [
+          "merchantCustomerId" => "Merchant_Customer_ID",
+          "description" => "Profile description here",
+          "email" => "customer-profile-email@here.com",
+          "paymentProfiles" => [
+            "customerType" => "individual",
+            "billTo" => [
+              "firstName" => "John",
+              "lastName" => "Doe",
+              "address" => "25 weldon st",
+              "city" => "Boise",
+              "state" => "Idaho",
+              "zip" => "99999"
+            ],
+            "payment" => [
+              "creditCard" => [
+                "cardNumber" => "4111111111111111",
+                "expirationDate" => "2025-12"
+              ]
+            ]
+          ]
+        ],
+        "validationMode" => "liveMode"
+      ]
+    ];
+
+    return json_decode(json_encode($template));
   }
 
   public function createPaymentProfileTemplate()
   {
-    return json_decode('{
-            "createCustomerPaymentProfileRequest": {
-                "merchantAuthentication": {
-                    "name": "5KP3u95bQpv",
-                    "transactionKey": "346HZ32z3fP4hTG2"
-                },
-                "customerProfileId": "10000",
-                "paymentProfile": {
-                    "billTo": {
-                        "firstName": "John",
-                        "lastName": "Doe",
-                        "address": "123 Main St.",
-                        "city": "Bellevue",
-                        "state": "WA",
-                        "zip": "98004",
-                        "country": "US",
-                        "phoneNumber": "000-000-0000"
-                    },
-                    "payment": {
-                        "creditCard": {
-                            "cardNumber": "4111111111111111",
-                            "expirationDate": "2023-12"
-                        }
-                    },
-                    "defaultPaymentProfile": false
-                },
-                "validationMode": "liveMode"
-            }
-        }');
+    $template = [
+      "createCustomerPaymentProfileRequest" => [
+        "merchantAuthentication" => [
+          "name" => config('authorizenet.login_id'),
+          "transactionKey" => config('authorizenet.transaction_key')
+        ],
+        "customerProfileId" => "10000",
+        "paymentProfile" => [
+          "billTo" => [
+            "firstName" => "John",
+            "lastName" => "Doe",
+            "address" => "123 Main St.",
+            "city" => "Bellevue",
+            "state" => "WA",
+            "zip" => "98004",
+            "country" => "US",
+            "phoneNumber" => "000-000-0000"
+          ],
+          "payment" => [
+            "creditCard" => [
+              "cardNumber" => "4111111111111111",
+              "expirationDate" => "2023-12"
+            ]
+          ],
+          "defaultPaymentProfile" => false
+        ],
+        "validationMode" => "liveMode"
+      ]
+    ];
+
+    return json_decode(json_encode($template));
   }
   public function createPaymentProfile($cardInfo, $billTo, $authorizeNetCustomerId)
   {
@@ -670,6 +676,40 @@ class AuthorizeNetService
         }');
   }
 
+  public function chargeCard($cardInfo, $billTo, $amount, $description = '')
+  {
+    $data = $this->chargeCardTemplate();
+
+    $data->createTransactionRequest->merchantAuthentication->name = config('authorizenet.login_id');
+    $data->createTransactionRequest->merchantAuthentication->transactionKey = config('authorizenet.transaction_key');
+
+    $data->createTransactionRequest->transactionRequest->transactionType = "authCaptureTransaction";
+    $data->createTransactionRequest->transactionRequest->amount = (string)$amount;
+
+    $data->createTransactionRequest->transactionRequest->payment->creditCard->cardNumber = $cardInfo['cardNumber'];
+    $data->createTransactionRequest->transactionRequest->payment->creditCard->expirationDate = $cardInfo['expirationDate'];
+    $data->createTransactionRequest->transactionRequest->payment->creditCard->cardCode = $cardInfo['cardCode'];
+
+    $data->createTransactionRequest->transactionRequest->billTo->firstName = $billTo['first_name'] ?? '';
+    $data->createTransactionRequest->transactionRequest->billTo->lastName = $billTo['last_name'] ?? '';
+    $data->createTransactionRequest->transactionRequest->billTo->address = $billTo['address'] ?? '';
+    $data->createTransactionRequest->transactionRequest->billTo->city = $billTo['city'] ?? '';
+    $data->createTransactionRequest->transactionRequest->billTo->state = $billTo['state'] ?? '';
+    $data->createTransactionRequest->transactionRequest->billTo->zip = $billTo['zipcode'] ?? '';
+
+    $data->createTransactionRequest->transactionRequest->order->invoiceNumber = 'CHG-' . time();
+    if ($description) {
+      $data->createTransactionRequest->transactionRequest->order->description = substr($description, 0, 255);
+    }
+
+    $response = Http::post($this->url, (array)$data);
+    $transaction = json_decode(trim($response->body()));
+
+    logger()->info('Direct card charge', ['amount' => $amount, 'response' => $transaction]);
+
+    return $transaction;
+  }
+
   public function createInvoicePayment($cardInfo, $billTo, $invoice, $fees = 0)
   {
     //transaction request template
@@ -996,18 +1036,20 @@ class AuthorizeNetService
 
   public function voidTransactionTemplate()
   {
-    return json_decode('{
-            "createTransactionRequest": {
-                "merchantAuthentication": {
-                    "name": "5KP3u95bQpv",
-                    "transactionKey": "346HZ32z3fP4hTG2"
-                },
-                "transactionRequest": {
-                    "transactionType": "voidTransaction",
-                    "refTransId": "1234567890"
-                }
-            }
-        }');
+    $template = [
+      "createTransactionRequest" => [
+        "merchantAuthentication" => [
+          "name" => config('authorizenet.login_id'),
+          "transactionKey" => config('authorizenet.transaction_key')
+        ],
+        "transactionRequest" => [
+          "transactionType" => "voidTransaction",
+          "refTransId" => "1234567890"
+        ]
+      ]
+    ];
+
+    return json_decode(json_encode($template));
   }
 
   public function voidTransaction($refTransId)
@@ -1030,15 +1072,34 @@ class AuthorizeNetService
 
   public function deleteCustomerProfileTemplate()
   {
-    return json_decode('{
-            "deleteCustomerProfileRequest": {
-                "merchantAuthentication": {
-                    "name": "5KP3u95bQpv",
-                    "transactionKey": "346HZ32z3fP4hTG2"
-                },
-                "customerProfileId": "10000"
-            }
-        }');
+    $template = [
+      "deleteCustomerProfileRequest" => [
+        "merchantAuthentication" => [
+          "name" => config('authorizenet.login_id'),
+          "transactionKey" => config('authorizenet.transaction_key')
+        ],
+        "customerProfileId" => "10000"
+      ]
+    ];
+
+    return json_decode(json_encode($template));
+  }
+
+  public function testCredentials()
+  {
+    $data = [
+      "authenticateTestRequest" => [
+        "merchantAuthentication" => [
+          "name" => config('authorizenet.login_id'),
+          "transactionKey" => config('authorizenet.transaction_key')
+        ]
+      ]
+    ];
+
+    $response = Http::post($this->url, $data);
+    $result = json_decode($response->body(), true);
+
+    return $result;
   }
 
   public function deleteCustomerProfile($customerProfileId)

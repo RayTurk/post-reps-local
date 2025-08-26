@@ -19,12 +19,11 @@
     class="btn btn-primary btn-sm ml-1 width-px-200 font-weight-bold font-px-17"
     id="accountingManageCards">Manage Credit Cards</a>
   @endcannot
-  @can('Admin', auth()->user())
-  <a
-    href="{{url('/accounting/charge-agent')}}"
-    class="btn btn-primary btn-sm ml-1 width-px-200 font-weight-bold font-px-17"
-    id="accountingChargeAgent">Charge Agent Card</a>
-  @endcan
+  @if(in_array(auth()->user()->role, [App\Models\User::ROLE_OFFICE, App\Models\User::ROLE_SUPER_ADMIN]))
+  <a href="{{url('/accounting/office/charge-agent')}}" class="btn btn-primary btn-sm ml-1 width-px-200 font-weight-bold font-px-17">
+    Charge Agent Card
+  </a>
+  @endif
   @can('Admin', auth()->user())
   <a
     href="{{url('/accounting/create/invoices')}}"
