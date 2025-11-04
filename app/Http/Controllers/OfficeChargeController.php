@@ -271,8 +271,9 @@ class OfficeChargeController extends Controller
         'merchantCustomerId' => $agentUser->id,
       ]);
 
-      if (isset($customerProfile->customerProfileId)) {
-        $agentUser->authorizenet_profile_id = $customerProfile->customerProfileId;
+      // createCustomerProfile returns an array
+      if (isset($customerProfile['customerProfileId'])) {
+        $agentUser->authorizenet_profile_id = $customerProfile['customerProfileId'];
         $agentUser->save();
       }
     }
@@ -280,15 +281,16 @@ class OfficeChargeController extends Controller
     // Add payment profile
     if ($agentUser->authorizenet_profile_id) {
       $paymentProfile = $this->authorizeNetService->createPaymentProfile(
-        $agentUser->authorizenet_profile_id,
         $cardInfo,
-        $billTo
+        $billTo,
+        $agentUser->authorizenet_profile_id
       );
 
-      if (isset($paymentProfile->customerPaymentProfileId)) {
+      // createPaymentProfile returns an array
+      if (isset($paymentProfile['customerPaymentProfileId'])) {
         AuthorizenetPaymentProfile::create([
           'user_id' => $agentUser->id,
-          'payment_profile_id' => $paymentProfile->customerPaymentProfileId,
+          'payment_profile_id' => $paymentProfile['customerPaymentProfileId'],
           'authorizenet_profile_id' => $agentUser->authorizenet_profile_id,
           'card_shared_with' => $officeUserId,
         ]);

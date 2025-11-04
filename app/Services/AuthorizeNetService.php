@@ -306,6 +306,45 @@ class AuthorizeNetService
     }');
   }
 
+  /**
+   * Create a payment profile for an existing customer
+   *
+   * @param array $cardInfo Card information
+   * @param array $billTo Billing information
+   * @param string $authorizeNetCustomerId Customer profile ID
+   * @return array Response from Authorize.Net
+   */
+  public function createPaymentProfile($cardInfo, $billTo, $authorizeNetCustomerId)
+  {
+    $data = $this->createPaymentProfileTemplate();
+
+    $data->createCustomerPaymentProfileRequest->merchantAuthentication->name = config('authorizenet.login_id');
+    $data->createCustomerPaymentProfileRequest->merchantAuthentication->transactionKey = config('authorizenet.transaction_key');
+    $data->createCustomerPaymentProfileRequest->customerProfileId = "$authorizeNetCustomerId";
+
+    // Set card info
+    $data->createCustomerPaymentProfileRequest->paymentProfile->payment->creditCard->cardNumber = $cardInfo['cardNumber'];
+    $data->createCustomerPaymentProfileRequest->paymentProfile->payment->creditCard->expirationDate = $cardInfo['expirationDate'];
+    $data->createCustomerPaymentProfileRequest->paymentProfile->payment->creditCard->cardCode = $cardInfo['cardCode'];
+
+    // Set billing info
+    $data->createCustomerPaymentProfileRequest->paymentProfile->billTo->firstName = $billTo['first_name'];
+    $data->createCustomerPaymentProfileRequest->paymentProfile->billTo->lastName = $billTo['last_name'];
+    $data->createCustomerPaymentProfileRequest->paymentProfile->billTo->address = $billTo['address'];
+    $data->createCustomerPaymentProfileRequest->paymentProfile->billTo->city = $billTo['city'];
+    $data->createCustomerPaymentProfileRequest->paymentProfile->billTo->state = $billTo['state'];
+    $data->createCustomerPaymentProfileRequest->paymentProfile->billTo->zip = $billTo['zipcode'];
+
+    $data->createCustomerPaymentProfileRequest->validationMode = $this->validationMode;
+
+    $response = Http::post($this->url, $this->objectToArray($data));
+    $transaction = $this->jsonDecode(trim($response->body()));
+
+    logger('createPaymentProfile response:', $transaction);
+
+    return $transaction;
+  }
+
   public function getPaymentProfile($authorizeNetCustomerId, $customerPaymentProfileId)
   {
     $data = $this->getPaymentProfileTemplate();

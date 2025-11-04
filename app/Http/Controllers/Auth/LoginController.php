@@ -12,9 +12,9 @@ use Illuminate\Validation\ValidationException;
 
 class LoginController extends Controller
 {
-    use HelperTrait;
-    protected $recaptchaService;
-    /*
+  use HelperTrait;
+  protected $recaptchaService;
+  /*
     |--------------------------------------------------------------------------
     | Login Controller
     |--------------------------------------------------------------------------
@@ -25,29 +25,29 @@ class LoginController extends Controller
     |
     */
 
-    use AuthenticatesUsers;
+  use AuthenticatesUsers;
 
-    /**
-     * Where to redirect users after login.
-     *
-     * @var string
-     */
-    protected $redirectTo = RouteServiceProvider::HOME;
+  /**
+   * Where to redirect users after login.
+   *
+   * @var string
+   */
+  protected $redirectTo = RouteServiceProvider::HOME;
 
-    /**
-     * Create a new controller instance.
-     *
-     * @return void
-     */
-    public function __construct(RecaptchaService $recaptchaService)
-    {
-        $this->middleware('guest')->except('logout');
-        $this->recaptchaService = $recaptchaService;
-    }
+  /**
+   * Create a new controller instance.
+   *
+   * @return void
+   */
+  public function __construct(RecaptchaService $recaptchaService)
+  {
+    $this->middleware('guest')->except('logout');
+    $this->recaptchaService = $recaptchaService;
+  }
 
-    public function showLoginForm()
-    {
-        /*$baseUrl = config('app.url').'/';
+  public function showLoginForm()
+  {
+    /*$baseUrl = config('app.url').'/';
         $loginUrl = "{$baseUrl}login";
         if (
             url()->previous() != 'http://localhost:3000/'
@@ -60,32 +60,39 @@ class LoginController extends Controller
             }
         }*/
 
-        return view('auth.login');
+    return view('auth.login');
+  }
+
+  /**
+   * Validate the user login request.
+   *
+   * @param  \Illuminate\Http\Request  $request
+   * @return void
+   *
+   * @throws \Illuminate\Validation\ValidationException
+   */
+  protected function validateLogin(Request $request)
+  {
+    $rules = [
+      $this->username() => 'required|string',
+      'password' => 'required|string',
+    ];
+
+    // Only require recaptcha in production
+    if (!app()->environment('local', 'development')) {
+      $rules['recaptcha_token'] = 'required|string';
     }
 
-    /**
-     * Validate the user login request.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return void
-     *
-     * @throws \Illuminate\Validation\ValidationException
-     */
-    protected function validateLogin(Request $request)
-    {
-        $request->validate([
-            $this->username() => 'required|string',
-            'password' => 'required|string',
-            'recaptcha_token' => 'required|string'
+    $request->validate($rules);
+
+    // Skip recaptcha validation in local/dev environments
+    if (!app()->environment('local', 'development')) {
+      $validRecaptcha = $this->recaptchaService->validate($request->recaptcha_token);
+      if (!$validRecaptcha) {
+        throw ValidationException::withMessages([
+          'recaptcha_token' => 'Recaptcha failed'
         ]);
-
-        //Validate recaptcha
-        $validRecaptcha = $this->recaptchaService->validate($request->recaptcha_token);
-        if (! $validRecaptcha) {
-            throw ValidationException::withMessages([
-                'recaptcha_token' => 'Recaptcha failed'
-            ]);
-            // return $this->backWithError('Recaptcha failed');
-        }
+      }
     }
+  }
 }
