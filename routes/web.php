@@ -339,7 +339,7 @@ Route::group(['middleware' => ['auth', 'verified'/*, 'approved'*/]], function ()
   Route::get('/datatable/office/orders/delivery', 'OfficeController@datatableDeliveryOrders');
   Route::get('/datatable/office/accounting/unpaid/invoices', 'OfficeController@datatableUnpaidInvoices');
   Route::get('/datatable/office/accounting/payments', 'OfficeController@datatablePayments');
-
+  Route::get('/accounting/office/charge-agent/get-cards/{agent}', [YourControllerClass::class, 'getAgentCards'])->name('office.charge.agent.get-cards');
   Route::group(['middleware' => 'can:Office, App\Models\User'], function () {
     Route::get('/office-users', 'UserController@officeAgents')->name('office.users.index');
     Route::get('/datatable/office-agents', 'OfficeController@officeAgentsDatatable');

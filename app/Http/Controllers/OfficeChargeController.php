@@ -263,38 +263,104 @@ class OfficeChargeController extends Controller
    */
   private function saveNewCard($agentUser, $cardInfo, $billTo, $officeUserId)
   {
-    // Create or get customer profile
-    if (!$agentUser->authorizenet_profile_id) {
-      $customerProfile = $this->authorizeNetService->createCustomerProfile([
-        'email' => $agentUser->email,
-        'description' => $agentUser->name,
-        'merchantCustomerId' => $agentUser->id,
+    logger()->info('saveNewCard called', [
+      'user_id' => $agentUser->id,
+      'user_name' => $agentUser->name,
+      'has_profile_id' => !empty($agentUser->authorizenet_profile_id),
+      'profile_id' => $agentUser->authorizenet_profile_id,
+      'office_user_id' => $officeUserId
+    ]);
+
+    try {
+      // Create or get customer profile
+      if (!$agentUser->authorizenet_profile_id) {
+        logger()->info('Creating new customer profile for user', ['user_id' => $agentUser->id]);
+
+        // Use createProfile method with all required parameters
+        $params = [
+          'email' => $agentUser->email,
+          'cardNumber' => $cardInfo['cardNumber'],
+          'expirationDate' => $cardInfo['expirationDate'],
+          'cardCode' => $cardInfo['cardCode'],
+          'cardOwner' => $agentUser,
+          'billTo' => $billTo,
+          'order_id' => null,
+          'order_type' => null,
+          'card_shared_with' => $officeUserId,
+          'office_card_visible_agents' => null
+        ];
+
+        logger()->info('Calling createProfile with params', [
+          'email' => $params['email'],
+          'user_id' => $agentUser->id
+        ]);
+
+        $result = $this->authorizeNetService->createProfile($params);
+
+        logger()->info('createProfile result', ['result' => $result]);
+
+        // Reload user to get updated authorizenet_profile_id
+        $agentUser->refresh();
+
+        if ($agentUser->authorizenet_profile_id) {
+          logger()->info('Customer profile created successfully', [
+            'user_id' => $agentUser->id,
+            'profile_id' => $agentUser->authorizenet_profile_id
+          ]);
+        } else {
+          logger()->error('Customer profile creation failed - profile_id not set', [
+            'user_id' => $agentUser->id,
+            'result' => $result
+          ]);
+        }
+
+        return $result;
+      } else {
+        logger()->info('Customer profile exists, adding payment profile', [
+          'user_id' => $agentUser->id,
+          'profile_id' => $agentUser->authorizenet_profile_id
+        ]);
+
+        // Customer profile already exists, just add payment profile
+        $paymentProfile = $this->authorizeNetService->createPaymentProfile(
+          $cardInfo,
+          $billTo,
+          $agentUser->authorizenet_profile_id
+        );
+
+        logger()->info('createPaymentProfile result', ['result' => $paymentProfile]);
+
+        // createPaymentProfile returns an array
+        if (isset($paymentProfile['customerPaymentProfileId'])) {
+          $profileRecord = AuthorizenetPaymentProfile::create([
+            'user_id' => $agentUser->id,
+            'payment_profile_id' => $paymentProfile['customerPaymentProfileId'],
+            'authorizenet_profile_id' => $agentUser->authorizenet_profile_id,
+            'card_shared_with' => $officeUserId,
+          ]);
+
+          logger()->info('Payment profile record created', [
+            'record_id' => $profileRecord->id,
+            'payment_profile_id' => $paymentProfile['customerPaymentProfileId']
+          ]);
+        } else {
+          logger()->error('Payment profile creation failed - no customerPaymentProfileId', [
+            'result' => $paymentProfile
+          ]);
+        }
+
+        return $paymentProfile;
+      }
+    } catch (\Exception $e) {
+      logger()->error('Exception in saveNewCard', [
+        'message' => $e->getMessage(),
+        'file' => $e->getFile(),
+        'line' => $e->getLine(),
+        'trace' => $e->getTraceAsString()
       ]);
 
-      // createCustomerProfile returns an array
-      if (isset($customerProfile['customerProfileId'])) {
-        $agentUser->authorizenet_profile_id = $customerProfile['customerProfileId'];
-        $agentUser->save();
-      }
-    }
-
-    // Add payment profile
-    if ($agentUser->authorizenet_profile_id) {
-      $paymentProfile = $this->authorizeNetService->createPaymentProfile(
-        $cardInfo,
-        $billTo,
-        $agentUser->authorizenet_profile_id
-      );
-
-      // createPaymentProfile returns an array
-      if (isset($paymentProfile['customerPaymentProfileId'])) {
-        AuthorizenetPaymentProfile::create([
-          'user_id' => $agentUser->id,
-          'payment_profile_id' => $paymentProfile['customerPaymentProfileId'],
-          'authorizenet_profile_id' => $agentUser->authorizenet_profile_id,
-          'card_shared_with' => $officeUserId,
-        ]);
-      }
+      // Don't throw - let the charge succeed even if card save fails
+      return null;
     }
   }
 

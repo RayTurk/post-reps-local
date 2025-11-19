@@ -416,12 +416,22 @@
         const agentId = $(this).val();
 
         if (agentId) {
-          // Clear current cards
+          // Clear current cards and disable the saved card dropdown
           $('#payment_profile_id').empty().append('<option value="">Loading cards...</option>');
+          $('#payment_profile_id').prop('disabled', true);
+
+          // Disable submit button while loading
+          $('#submitBtn').prop('disabled', true);
+
+          // FIXED: Use secure_url() or construct proper HTTPS URL
+          const cardsUrl = '{{ secure_url("/accounting/office/charge-agent/get-cards") }}/' + agentId;
+
+          console.log('Loading cards from:', cardsUrl);
 
           // Load agent's cards
-          $.get(`{{ url('/accounting/office/charge-agent/get-cards') }}/${agentId}`)
+          $.get(cardsUrl)
             .done(function(cards) {
+              console.log('Cards loaded successfully:', cards);
               $('#payment_profile_id').empty().append('<option value="">-- Select Card --</option>');
 
               if (cards.length > 0) {
@@ -430,21 +440,49 @@
                     `<option value="${card.payment_profile_id}">${card.cardType} ending in ${card.cardNumber.slice(-4)} (Exp: ${card.expDate})</option>`
                   );
                 });
+
+                // Re-enable the dropdown
+                $('#payment_profile_id').prop('disabled', false);
+
+                // FIXED: If "saved_card" is selected, auto-select the first card if there's only one
+                if ($('input[name="payment_method"]:checked').val() === 'saved_card' && cards.length === 1) {
+                  $('#payment_profile_id').val(cards[0].payment_profile_id);
+                  console.log('Auto-selected the only available card');
+                }
               } else {
                 $('#payment_profile_id').append('<option value="" disabled>No saved cards found</option>');
+                $('#payment_profile_id').prop('disabled', true);
               }
 
+              // FIXED: Always recheck validation after cards load
               checkFormValidity();
+              console.log('Validation checked after cards loaded');
             })
-            .fail(function() {
+            .fail(function(xhr, status, error) {
+              console.error('Failed to load cards:', {
+                xhr,
+                status,
+                error
+              });
               $('#payment_profile_id').empty().append('<option value="" disabled>Error loading cards</option>');
+              $('#payment_profile_id').prop('disabled', true);
+              checkFormValidity();
             });
         } else {
           $('#payment_profile_id').empty().append('<option value="">-- Select Agent First --</option>');
+          $('#payment_profile_id').prop('disabled', true);
         }
 
+        // Check validity immediately (will be rechecked when cards load)
         checkFormValidity();
       });
+
+      // ALSO ADD: Monitor changes to the payment profile dropdown
+      $('#payment_profile_id').on('change', function() {
+        console.log('Payment profile selected:', $(this).val());
+        checkFormValidity();
+      });
+
 
       // Card number formatting
       $('#card_number').on('input', function() {
@@ -505,7 +543,7 @@
         const formData = new FormData(this);
         console.log('Form submission data:', Object.fromEntries(formData));
 
-        if (confirm(`Are you sure you want to charge ${amount.toFixed(2)} to ${agentName}?`)) {
+        if (confirm(`Are you sure you want to charge $${amount.toFixed(2)} to ${agentName}?`)) {
           $('#submitBtn')
             .prop('disabled', true)
             .html('<i class="fas fa-spinner fa-spin"></i> Processing...');

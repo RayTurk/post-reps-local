@@ -41,7 +41,10 @@ class AuthorizeNetService
   private function processResponse($response)
   {
     if ($response->successful()) {
-      $responseData = $response->json();
+      // Use our custom jsonDecode that handles encoding issues
+      $responseData = $this->jsonDecode(trim($response->body()));
+
+      // Convert array to object for consistency with existing code
       return json_decode(json_encode($responseData));
     } else {
       return (object)[
@@ -140,13 +143,6 @@ class AuthorizeNetService
           "email": "",
           "paymentProfiles": {
             "customerType": "individual",
-            "payment": {
-              "creditCard": {
-                "cardNumber": "",
-                "expirationDate": "",
-                "cardCode": ""
-              }
-            },
             "billTo": {
               "firstName": "",
               "lastName": "",
@@ -154,6 +150,13 @@ class AuthorizeNetService
               "city": "",
               "state": "",
               "zip": ""
+            },
+            "payment": {
+              "creditCard": {
+                "cardNumber": "",
+                "expirationDate": "",
+                "cardCode": ""
+              }
             }
           }
         },
@@ -457,42 +460,94 @@ class AuthorizeNetService
 
   public function chargeCustomerProfile($customerProfileId, $paymentProfileId, $amount, $description = '')
   {
+    logger()->info('chargeCustomerProfile called', [
+      'customer_profile_id' => $customerProfileId,
+      'payment_profile_id' => $paymentProfileId,
+      'amount' => $amount,
+      'description' => $description
+    ]);
+
     $data = json_decode('{
-      "createTransactionRequest": {
-        "merchantAuthentication": {
-          "name": "",
-          "transactionKey": ""
-        },
-        "transactionRequest": {
-          "transactionType": "authCaptureTransaction",
-          "amount": "0.00",
-          "profile": {
-            "customerProfileId": "",
-            "paymentProfile": {
-              "paymentProfileId": ""
+        "createTransactionRequest": {
+            "merchantAuthentication": {
+                "name": "",
+                "transactionKey": ""
+            },
+            "transactionRequest": {
+                "transactionType": "authCaptureTransaction",
+                "amount": "0.00",
+                "profile": {
+                    "customerProfileId": "",
+                    "paymentProfile": {
+                        "paymentProfileId": ""
+                    }
+                },
+                "order": {
+                    "description": ""
+                }
             }
-          },
-          "order": {
-            "description": ""
-          }
         }
-      }
     }');
 
     $data->createTransactionRequest->merchantAuthentication->name = config('authorizenet.login_id');
     $data->createTransactionRequest->merchantAuthentication->transactionKey = config('authorizenet.transaction_key');
 
-    $data->createTransactionRequest->transactionRequest->amount = $amount;
-    $data->createTransactionRequest->transactionRequest->profile->customerProfileId = $customerProfileId;
-    $data->createTransactionRequest->transactionRequest->profile->paymentProfile->paymentProfileId = $paymentProfileId;
+    // Cast to float before formatting
+    $data->createTransactionRequest->transactionRequest->amount = number_format((float)$amount, 2, '.', '');
+
+    // Cast IDs to string
+    $data->createTransactionRequest->transactionRequest->profile->customerProfileId = (string)$customerProfileId;
+    $data->createTransactionRequest->transactionRequest->profile->paymentProfile->paymentProfileId = (string)$paymentProfileId;
     $data->createTransactionRequest->transactionRequest->order->description = substr($description, 0, 255);
 
-    $response = Http::post($this->url, $this->objectToArray($data));
-    $transaction = $this->processResponse($response);
+    logger()->info('Sending request to Authorize.Net', [
+      'url' => $this->url,
+      'amount' => $data->createTransactionRequest->transactionRequest->amount,
+      'customer_profile_id' => $data->createTransactionRequest->transactionRequest->profile->customerProfileId,
+      'payment_profile_id' => $data->createTransactionRequest->transactionRequest->profile->paymentProfile->paymentProfileId
+    ]);
 
-    return $transaction;
+    try {
+      $response = Http::post($this->url, $this->objectToArray($data));
+
+      // Log the raw response for debugging
+      logger()->info('Raw HTTP response from Authorize.Net', [
+        'status' => $response->status(),
+        'successful' => $response->successful(),
+        'body' => $response->body(),
+        'json' => $response->json()
+      ]);
+
+      $transaction = $this->processResponse($response);
+
+      logger()->info('Processed transaction object', [
+        'transaction' => $transaction
+      ]);
+
+      logger()->info('chargeCustomerProfile response', [
+        'result_code' => $transaction->messages->resultCode ?? 'Unknown',
+        'messages' => $transaction->messages ?? null,
+        'transaction_response' => $transaction->transactionResponse ?? null
+      ]);
+
+      // Log error details if transaction failed
+      if (isset($transaction->messages->resultCode) && $transaction->messages->resultCode === 'Error') {
+        logger()->error('Authorize.Net charge failed', [
+          'messages' => $transaction->messages,
+          'transaction_response' => $transaction->transactionResponse ?? null
+        ]);
+      }
+
+      return $transaction;
+    } catch (\Exception $e) {
+      logger()->error('Exception in chargeCustomerProfile', [
+        'message' => $e->getMessage(),
+        'file' => $e->getFile(),
+        'line' => $e->getLine()
+      ]);
+      throw $e;
+    }
   }
-
   public function chargeCustomerProfileTemplate()
   {
     return json_decode('{
