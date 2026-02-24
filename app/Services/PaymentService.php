@@ -683,4 +683,13 @@ class PaymentService
 
     return $payment;
   }
+
+  public function resetCardRejectionCounter($cardLastFour, $office_id, $agent_id)
+  {
+    CardRejectionCounter::where('card_last_four', $cardLastFour)
+      ->where('office_id', $office_id)
+      ->when(!empty($agent_id), function ($query) use ($agent_id) {
+        $query->where('agent_id', $agent_id);
+      })->delete();
+  }
 }
