@@ -1451,43 +1451,59 @@ const DeliveryOrder = {
                     $(`[delivery-billing-state]`).val(res.billing.state);
                     $(`[delivery-billing-zip]`).val(res.billing.zipcode);
 
-                    $('#delivery_use_another_card').prop('checked', true);
-                    $(`.form-another-card input`).prop('disabled', false);
-                    $('#delivery_card_profile_select').prop('disabled', true);
+                    // Initialize admin charge selectors if present
+                    if ($('#admin_delivery_office_select').length) {
+                        Payment.initAdminChargeSelectors({
+                            officeSelect: 'admin_delivery_office_select',
+                            agentSelect: 'admin_delivery_charge_agent_select',
+                            cardSelect: 'delivery_card_profile_select',
+                            useCardCheckbox: 'delivery_use_card_profile',
+                            useAnotherCheckbox: 'delivery_use_another_card'
+                        });
 
-                    //If user has card on file then enable Use Cards on File. Otherwise enable Enter Another Card
-                    if (res.deliveryOrder.office.user.authorizenet_profile_id) {
-                        $('#delivery_use_card_profile').prop('checked', true);
-                        $('#delivery_card_profile_select').prop('disabled', false);
-                        $(`.form-another-card input`).prop('disabled', true);
-                        $('#delivery_use_another_card').prop('checked', false);
-
-                        //Load cards in dropdown
-                        if (!res.deliveryOrder.agent) {
-                            Payment.loadCards($('#delivery_card_profile_select'), res.deliveryOrder.office.user.id);
-                        } else {
-                            //Load any office card visible to agent
-                            Payment.loadOfficeCardsVisibleToAgent(
-                                $('#delivery_card_profile_select'),
-                                res.deliveryOrder.office.user.id
-                            );
-                        }
+                        // Pre-select the order's office
+                        Payment.loadOfficesForAdmin($('#admin_delivery_office_select'), function () {
+                            let officeOption = $(`#admin_delivery_office_select option`).filter(function () {
+                                return $(this).data('user-id') == res.deliveryOrder.office.user.id;
+                            });
+                            if (officeOption.length) {
+                                $('#admin_delivery_office_select').val(officeOption.val()).trigger('change');
+                            }
+                        });
                     } else {
-                        $(`.form-another-card input`).prop('disabled', false);
                         $('#delivery_use_another_card').prop('checked', true);
-                        $('#delivery_use_card_profile').prop('checked', false);
+                        $(`.form-another-card input`).prop('disabled', false);
                         $('#delivery_card_profile_select').prop('disabled', true);
-                    }
 
-                    if (res.deliveryOrder.agent) {
-                        if (res.deliveryOrder.agent.user.authorizenet_profile_id) {
+                        if (res.deliveryOrder.office.user.authorizenet_profile_id) {
                             $('#delivery_use_card_profile').prop('checked', true);
                             $('#delivery_card_profile_select').prop('disabled', false);
                             $(`.form-another-card input`).prop('disabled', true);
                             $('#delivery_use_another_card').prop('checked', false);
 
-                            //Load cards in dropdown
-                            Payment.loadCards($('#delivery_card_profile_select'), res.deliveryOrder.agent.user.id);
+                            if (!res.deliveryOrder.agent) {
+                                Payment.loadCards($('#delivery_card_profile_select'), res.deliveryOrder.office.user.id);
+                            } else {
+                                Payment.loadOfficeCardsVisibleToAgent(
+                                    $('#delivery_card_profile_select'),
+                                    res.deliveryOrder.office.user.id
+                                );
+                            }
+                        } else {
+                            $(`.form-another-card input`).prop('disabled', false);
+                            $('#delivery_use_another_card').prop('checked', true);
+                            $('#delivery_use_card_profile').prop('checked', false);
+                            $('#delivery_card_profile_select').prop('disabled', true);
+                        }
+
+                        if (res.deliveryOrder.agent) {
+                            if (res.deliveryOrder.agent.user.authorizenet_profile_id) {
+                                $('#delivery_use_card_profile').prop('checked', true);
+                                $('#delivery_card_profile_select').prop('disabled', false);
+                                $(`.form-another-card input`).prop('disabled', true);
+                                $('#delivery_use_another_card').prop('checked', false);
+                                Payment.loadCards($('#delivery_card_profile_select'), res.deliveryOrder.agent.user.id);
+                            }
                         }
                     }
 

@@ -747,36 +747,62 @@ const OfficeRemovalOrder = {
                     $(`[removal-billing-state]`).val(res.billing.state);
                     $(`[removal-billing-zip]`).val(res.billing.zipcode);
 
-                    //If user has card on file then enable Use Cards on File. Otherwise enable Enter Another Card
-                    if (res.removalOrder.office.user.authorizenet_profile_id) {
-                        $('#removal_use_card_profile').prop('checked', true);
-                        $('#removal_card_profile_select').prop('disabled', false);
-                        $(`.form-another-card input`).prop('disabled', true);
-                        $('#removal_use_another_card').prop('checked', false);
+                    // Initialize office charge source selector
+                    if ($('#removal_charge_source_select').length) {
+                        Payment.initOfficeChargeSource({
+                            sourceSelect: 'removal_charge_source_select',
+                            agentSection: 'removal_agent_select_section',
+                            agentSelect: 'removal_charge_agent_select',
+                            cardSelect: 'removal_card_profile_select',
+                            useCardCheckbox: 'removal_use_card_profile',
+                            useAnotherCheckbox: 'removal_use_another_card',
+                            officeId: res.removalOrder.office.id,
+                            officeUserId: res.removalOrder.office.user.id
+                        });
 
-                        //Load cards in dropdown
-                        Payment.loadCards($('#removal_card_profile_select'), res.removalOrder.office.user.id);
-
+                        // Default: load office's own cards
+                        Payment.loadCardsFromChargeAPI($('#removal_card_profile_select'), {
+                            source: 'office'
+                        }, function (cards) {
+                            if (cards.length > 0) {
+                                $('#removal_use_card_profile').prop('checked', true);
+                                $('#removal_card_profile_select').prop('disabled', false);
+                                $(`.form-another-card input`).prop('disabled', true);
+                                $('#removal_use_another_card').prop('checked', false);
+                            } else {
+                                $(`.form-another-card input`).prop('disabled', false);
+                                $('#removal_use_another_card').prop('checked', true);
+                                $('#removal_use_card_profile').prop('checked', false);
+                                $('#removal_card_profile_select').prop('disabled', true);
+                            }
+                        });
                     } else {
-                        $(`.form-another-card input`).prop('disabled', false);
-                        $('#removal_use_another_card').prop('checked', true);
-                        $('#removal_use_card_profile').prop('checked', false);
-                        $('#removal_card_profile_select').prop('disabled', true);
-                    }
-
-                    if (res.removalOrder.agent) {
-                        if (res.removalOrder.agent.user.authorizenet_profile_id) {
+                        // Fallback: original card loading logic
+                        if (res.removalOrder.office.user.authorizenet_profile_id) {
                             $('#removal_use_card_profile').prop('checked', true);
                             $('#removal_card_profile_select').prop('disabled', false);
                             $(`.form-another-card input`).prop('disabled', true);
                             $('#removal_use_another_card').prop('checked', false);
+                            Payment.loadCards($('#removal_card_profile_select'), res.removalOrder.office.user.id);
+                        } else {
+                            $(`.form-another-card input`).prop('disabled', false);
+                            $('#removal_use_another_card').prop('checked', true);
+                            $('#removal_use_card_profile').prop('checked', false);
+                            $('#removal_card_profile_select').prop('disabled', true);
+                        }
 
-                            //Load cards in dropdown
-                            Payment.loadAgentCardsVisibleToOffice(
-                                $('#removal_card_profile_select'),
-                                res.removalOrder.agent.user.id,
-                                res.removalOrder.office.user.id
-                            );
+                        if (res.removalOrder.agent) {
+                            if (res.removalOrder.agent.user.authorizenet_profile_id) {
+                                $('#removal_use_card_profile').prop('checked', true);
+                                $('#removal_card_profile_select').prop('disabled', false);
+                                $(`.form-another-card input`).prop('disabled', true);
+                                $('#removal_use_another_card').prop('checked', false);
+                                Payment.loadAgentCardsVisibleToOffice(
+                                    $('#removal_card_profile_select'),
+                                    res.removalOrder.agent.user.id,
+                                    res.removalOrder.office.user.id
+                                );
+                            }
                         }
                     }
 

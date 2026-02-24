@@ -1364,38 +1364,62 @@ const OfficeOrders = {
                     $(`[billing-state]`).val(res.billing.state);
                     $(`[billing-zip]`).val(res.billing.zipcode);
 
-                    //If office has card on file then enable Use Cards on File.
-                    //Otherwise enable Enter Another Card
-                    if (res.order.office.user.authorizenet_profile_id) {
-                        $('#use_card_profile').prop('checked', true);
-                        $('#card_profile_select').prop('disabled', false);
-                        $(`.form-another-card input`).prop('disabled', true);
-                        $('#use_another_card').prop('checked', false);
+                    // Initialize office charge source selector
+                    if ($('#charge_source_select').length) {
+                        Payment.initOfficeChargeSource({
+                            sourceSelect: 'charge_source_select',
+                            agentSection: 'agent_select_section',
+                            agentSelect: 'charge_agent_select',
+                            cardSelect: 'card_profile_select',
+                            useCardCheckbox: 'use_card_profile',
+                            useAnotherCheckbox: 'use_another_card',
+                            officeId: res.order.office.id,
+                            officeUserId: res.order.office.user.id
+                        });
 
-                        //Load cards in dropdown
-                        Payment.loadCards($('#card_profile_select'), res.order.office.user.id);
-
+                        // Default: load office's own cards
+                        Payment.loadCardsFromChargeAPI($('#card_profile_select'), {
+                            source: 'office'
+                        }, function (cards) {
+                            if (cards.length > 0) {
+                                $('#use_card_profile').prop('checked', true);
+                                $('#card_profile_select').prop('disabled', false);
+                                $(`.form-another-card input`).prop('disabled', true);
+                                $('#use_another_card').prop('checked', false);
+                            } else {
+                                $(`.form-another-card input`).prop('disabled', false);
+                                $('#use_another_card').prop('checked', true);
+                                $('#use_card_profile').prop('checked', false);
+                                $('#card_profile_select').prop('disabled', true);
+                            }
+                        });
                     } else {
-                        $(`.form-another-card input`).prop('disabled', false);
-                        $('#use_another_card').prop('checked', true);
-                        $('#use_card_profile').prop('checked', false);
-                        $('#card_profile_select').prop('disabled', true);
-                    }
-
-                    //Load any saved card for agent
-                    if (res.order.agent) {
-                        if (res.order.agent.user.authorizenet_profile_id) {
+                        // Fallback: original card loading logic
+                        if (res.order.office.user.authorizenet_profile_id) {
                             $('#use_card_profile').prop('checked', true);
                             $('#card_profile_select').prop('disabled', false);
                             $(`.form-another-card input`).prop('disabled', true);
                             $('#use_another_card').prop('checked', false);
+                            Payment.loadCards($('#card_profile_select'), res.order.office.user.id);
+                        } else {
+                            $(`.form-another-card input`).prop('disabled', false);
+                            $('#use_another_card').prop('checked', true);
+                            $('#use_card_profile').prop('checked', false);
+                            $('#card_profile_select').prop('disabled', true);
+                        }
 
-                            //Load cards in dropdown
-                            Payment.loadAgentCardsVisibleToOffice(
-                                $('#card_profile_select'),
-                                res.order.agent.user.id,
-                                res.order.office.user.id
-                            );
+                        if (res.order.agent) {
+                            if (res.order.agent.user.authorizenet_profile_id) {
+                                $('#use_card_profile').prop('checked', true);
+                                $('#card_profile_select').prop('disabled', false);
+                                $(`.form-another-card input`).prop('disabled', true);
+                                $('#use_another_card').prop('checked', false);
+                                Payment.loadAgentCardsVisibleToOffice(
+                                    $('#card_profile_select'),
+                                    res.order.agent.user.id,
+                                    res.order.office.user.id
+                                );
+                            }
                         }
                     }
 

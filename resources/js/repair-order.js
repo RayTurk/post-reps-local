@@ -1395,43 +1395,59 @@ const RepairOrder = {
                     $(`[repair-billing-state]`).val(res.billing.state);
                     $(`[repair-billing-zip]`).val(res.billing.zipcode);
 
-                    $('#repair_use_another_card').prop('checked', true);
-                    $(`.form-another-card input`).prop('disabled', false);
-                    $('#repair_card_profile_select').prop('disabled', true);
+                    // Initialize admin charge selectors if present
+                    if ($('#admin_repair_office_select').length) {
+                        Payment.initAdminChargeSelectors({
+                            officeSelect: 'admin_repair_office_select',
+                            agentSelect: 'admin_repair_charge_agent_select',
+                            cardSelect: 'repair_card_profile_select',
+                            useCardCheckbox: 'repair_use_card_profile',
+                            useAnotherCheckbox: 'repair_use_another_card'
+                        });
 
-                    //If user has card on file then enable Use Cards on File. Otherwise enable Enter Another Card
-                    if (res.repairOrder.office.user.authorizenet_profile_id) {
-                        $('#repair_use_card_profile').prop('checked', true);
-                        $('#repair_card_profile_select').prop('disabled', false);
-                        $(`.form-another-card input`).prop('disabled', true);
-                        $('#repair_use_another_card').prop('checked', false);
-
-                        //Load cards in dropdown
-                        if (!res.repairOrder.agent) {
-                            Payment.loadCards($('#repair_card_profile_select'), res.repairOrder.office.user.id);
-                        } else {
-                            //Load any office card visible to agent
-                            Payment.loadOfficeCardsVisibleToAgent(
-                                $('#repair_card_profile_select'),
-                                res.repairOrder.office.user.id
-                            );
-                        }
+                        // Pre-select the order's office
+                        Payment.loadOfficesForAdmin($('#admin_repair_office_select'), function () {
+                            let officeOption = $(`#admin_repair_office_select option`).filter(function () {
+                                return $(this).data('user-id') == res.repairOrder.office.user.id;
+                            });
+                            if (officeOption.length) {
+                                $('#admin_repair_office_select').val(officeOption.val()).trigger('change');
+                            }
+                        });
                     } else {
-                        $(`.form-another-card input`).prop('disabled', false);
                         $('#repair_use_another_card').prop('checked', true);
-                        $('#repair_use_card_profile').prop('checked', false);
+                        $(`.form-another-card input`).prop('disabled', false);
                         $('#repair_card_profile_select').prop('disabled', true);
-                    }
 
-                    if (res.repairOrder.agent) {
-                        if (res.repairOrder.agent.user.authorizenet_profile_id) {
+                        if (res.repairOrder.office.user.authorizenet_profile_id) {
                             $('#repair_use_card_profile').prop('checked', true);
                             $('#repair_card_profile_select').prop('disabled', false);
                             $(`.form-another-card input`).prop('disabled', true);
                             $('#repair_use_another_card').prop('checked', false);
 
-                            //Load cards in dropdown
-                            Payment.loadCards($('#repair_card_profile_select'), res.repairOrder.agent.user.id);
+                            if (!res.repairOrder.agent) {
+                                Payment.loadCards($('#repair_card_profile_select'), res.repairOrder.office.user.id);
+                            } else {
+                                Payment.loadOfficeCardsVisibleToAgent(
+                                    $('#repair_card_profile_select'),
+                                    res.repairOrder.office.user.id
+                                );
+                            }
+                        } else {
+                            $(`.form-another-card input`).prop('disabled', false);
+                            $('#repair_use_another_card').prop('checked', true);
+                            $('#repair_use_card_profile').prop('checked', false);
+                            $('#repair_card_profile_select').prop('disabled', true);
+                        }
+
+                        if (res.repairOrder.agent) {
+                            if (res.repairOrder.agent.user.authorizenet_profile_id) {
+                                $('#repair_use_card_profile').prop('checked', true);
+                                $('#repair_card_profile_select').prop('disabled', false);
+                                $(`.form-another-card input`).prop('disabled', true);
+                                $('#repair_use_another_card').prop('checked', false);
+                                Payment.loadCards($('#repair_card_profile_select'), res.repairOrder.agent.user.id);
+                            }
                         }
                     }
 

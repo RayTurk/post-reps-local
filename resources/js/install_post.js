@@ -410,44 +410,59 @@ const InstallPost = {
                     $(`[billing-state]`).val(res.billing.state);
                     $(`[billing-zip]`).val(res.billing.zipcode);
 
-                    $('#use_another_card').prop('checked', true);
-                    $(`.form-another-card input`).prop('disabled', false);
-                    $('#card_profile_select').prop('disabled', true);
+                    // Initialize admin charge selectors if present
+                    if ($('#admin_office_select').length) {
+                        Payment.initAdminChargeSelectors({
+                            officeSelect: 'admin_office_select',
+                            agentSelect: 'admin_charge_agent_select',
+                            cardSelect: 'card_profile_select',
+                            useCardCheckbox: 'use_card_profile',
+                            useAnotherCheckbox: 'use_another_card'
+                        });
 
-                    //If user has card on file then enable Use Cards on File. Otherwise enable Enter Another Card
-                    if (res.order.office.user.authorizenet_profile_id) {
-                        $('#use_card_profile').prop('checked', true);
-                        $('#card_profile_select').prop('disabled', false);
-                        $(`.form-another-card input`).prop('disabled', true);
-                        $('#use_another_card').prop('checked', false);
-
-                        //Load cards in dropdown
-                        if (!res.order.agent) {
-                            Payment.loadCards($('#card_profile_select'), res.order.office.user.id);
-                        } else {
-                            //Load any office card visible to agent
-                            Payment.loadOfficeCardsVisibleToAgent(
-                                $('#card_profile_select'),
-                                res.order.office.user.id
-                            );
-                        }
+                        // Pre-select the order's office
+                        Payment.loadOfficesForAdmin($('#admin_office_select'), function () {
+                            let officeOption = $(`#admin_office_select option`).filter(function () {
+                                return $(this).data('user-id') == res.order.office.user.id;
+                            });
+                            if (officeOption.length) {
+                                $('#admin_office_select').val(officeOption.val()).trigger('change');
+                            }
+                        });
                     } else {
-                        $(`.form-another-card input`).prop('disabled', false);
                         $('#use_another_card').prop('checked', true);
-                        $('#use_card_profile').prop('checked', false);
+                        $(`.form-another-card input`).prop('disabled', false);
                         $('#card_profile_select').prop('disabled', true);
-                    }
 
-                    //Load any saved card for agent
-                    if (res.order.agent) {
-                        if (res.order.agent.user.authorizenet_profile_id) {
+                        if (res.order.office.user.authorizenet_profile_id) {
                             $('#use_card_profile').prop('checked', true);
                             $('#card_profile_select').prop('disabled', false);
                             $(`.form-another-card input`).prop('disabled', true);
                             $('#use_another_card').prop('checked', false);
 
-                            //Load cards in dropdown
-                            Payment.loadCards($('#card_profile_select'), res.order.agent.user.id);
+                            if (!res.order.agent) {
+                                Payment.loadCards($('#card_profile_select'), res.order.office.user.id);
+                            } else {
+                                Payment.loadOfficeCardsVisibleToAgent(
+                                    $('#card_profile_select'),
+                                    res.order.office.user.id
+                                );
+                            }
+                        } else {
+                            $(`.form-another-card input`).prop('disabled', false);
+                            $('#use_another_card').prop('checked', true);
+                            $('#use_card_profile').prop('checked', false);
+                            $('#card_profile_select').prop('disabled', true);
+                        }
+
+                        if (res.order.agent) {
+                            if (res.order.agent.user.authorizenet_profile_id) {
+                                $('#use_card_profile').prop('checked', true);
+                                $('#card_profile_select').prop('disabled', false);
+                                $(`.form-another-card input`).prop('disabled', true);
+                                $('#use_another_card').prop('checked', false);
+                                Payment.loadCards($('#card_profile_select'), res.order.agent.user.id);
+                            }
                         }
                     }
 

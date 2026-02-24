@@ -13,6 +13,20 @@
                     @csrf
                     <input type="hidden" name="repair_order_id"  >
                     <div class="row">
+                        @if(auth()->user()->role == App\Models\User::ROLE_SUPER_ADMIN)
+                        <div class="col-12 mb-2" id="admin_repair_office_select_section">
+                            <label class="text-primary font-px-18"><strong>Select Office</strong></label>
+                            <select id="admin_repair_office_select" class="form-control">
+                                <option value="">-- Select Office --</option>
+                            </select>
+                        </div>
+                        <div class="col-12 mb-2" id="admin_repair_agent_select_section">
+                            <label class="text-dark"><strong>Select Agent (optional)</strong></label>
+                            <select id="admin_repair_charge_agent_select" class="form-control">
+                                <option value="">-- Office Card --</option>
+                            </select>
+                        </div>
+                        @endif
                         <div class="col-12">
                             <input type="checkbox" name="repair_payment_type" value="use_card" id="repair_use_card_profile"
                                 class="m-0 mx-1 scale-1_5">

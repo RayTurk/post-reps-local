@@ -145,6 +145,11 @@ Route::group(['middleware' => ['auth', 'verified'/*, 'approved'*/]], function ()
       Route::post('/payment/delivery/pay', "PaymentController@payDeliveryOrder");
       Route::get('payment/get-office-cards-visible-to-agents/{office}/{officePayMethod}/{agentPayMethod}', 'PaymentController@getOfficeCardsVisibleToAgents');
     });
+
+    // Unified card charging API endpoints
+    Route::get('/charge/offices', 'OrderChargeController@getOffices');
+    Route::get('/charge/offices/{office}/agents', 'OrderChargeController@getAgentsForOffice');
+    Route::get('/charge/cards', 'OrderChargeController@getCards');
   });
 
   //====
@@ -339,7 +344,6 @@ Route::group(['middleware' => ['auth', 'verified'/*, 'approved'*/]], function ()
   Route::get('/datatable/office/orders/delivery', 'OfficeController@datatableDeliveryOrders');
   Route::get('/datatable/office/accounting/unpaid/invoices', 'OfficeController@datatableUnpaidInvoices');
   Route::get('/datatable/office/accounting/payments', 'OfficeController@datatablePayments');
-  Route::get('/accounting/office/charge-agent/get-cards/{agent}', [YourControllerClass::class, 'getAgentCards'])->name('office.charge.agent.get-cards');
   Route::group(['middleware' => 'can:Office, App\Models\User'], function () {
     Route::get('/office-users', 'UserController@officeAgents')->name('office.users.index');
     Route::get('/datatable/office-agents', 'OfficeController@officeAgentsDatatable');
@@ -421,11 +425,6 @@ Route::group(['middleware' => ['auth', 'verified'/*, 'approved'*/]], function ()
       Route::get('/unpaid/invoice/payer/{id}', 'AccountingUnpaidInvoicesController@getInvoicePayer');
       Route::post('/unpaid/invoices/payment', 'AccountingUnpaidInvoicesController@processPayment');
 
-      // Office charge routes - accessible by Office and Super Admin users
-      // Authorization is handled in the controller
-      Route::get('/office/charge-agent', 'OfficeChargeController@index')->name('office.charge.agent');
-      Route::get('/office/charge-agent/get-cards/{agent}', 'OfficeChargeController@getAgentCards')->name('office.charge.agent.cards');
-      Route::post('/office/charge-agent/process', 'OfficeChargeController@processCharge')->name('office.charge.agent.process');
     });
   });
 

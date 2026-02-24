@@ -494,6 +494,243 @@ const Payment = {
             })
         }
     },
+
+    /**
+     * Load cards from the unified charge API endpoint
+     * @param {jQuery} selectInput - The card select dropdown
+     * @param {object} params - Query params: { office_user_id, agent_user_id, source }
+     * @param {function} callback - Optional callback after cards are loaded
+     */
+    loadCardsFromChargeAPI(selectInput, params, callback) {
+        const queryString = $.param(params);
+        const url = `${helper.getSiteUrl()}/charge/cards?${queryString}`;
+
+        selectInput.empty();
+
+        $.get(url)
+        .done(res => {
+            let html = '';
+            if (res.length === 0) {
+                html = '<option value="">No saved cards found</option>';
+            }
+            res.forEach(card => {
+                html += `<option value="${card.value}">${card.cardType}: XXXX-XXXX-${card.cardNumber}  exp ${card.expDate}</option>`;
+            });
+            selectInput.html(html);
+
+            if (typeof callback === 'function') {
+                callback(res);
+            }
+        })
+        .fail(() => {
+            selectInput.html('<option value="">Error loading cards</option>');
+        });
+    },
+
+    /**
+     * Load offices for admin dropdown
+     * @param {jQuery} selectInput - The office select dropdown
+     * @param {function} callback - Optional callback after offices are loaded
+     */
+    loadOfficesForAdmin(selectInput, callback) {
+        const url = `${helper.getSiteUrl()}/charge/offices`;
+
+        $.get(url)
+        .done(res => {
+            let html = '<option value="">-- Select Office --</option>';
+            res.forEach(office => {
+                html += `<option value="${office.id}" data-user-id="${office.user_id}">${office.name}</option>`;
+            });
+            selectInput.html(html);
+
+            if (typeof callback === 'function') {
+                callback(res);
+            }
+        })
+        .fail(() => {
+            helper.alertError('Unable to load offices.');
+        });
+    },
+
+    /**
+     * Load agents for an office
+     * @param {jQuery} selectInput - The agent select dropdown
+     * @param {int} officeId - The office ID
+     * @param {string} defaultLabel - Default option label
+     * @param {function} callback - Optional callback after agents are loaded
+     */
+    loadAgentsForOffice(selectInput, officeId, defaultLabel, callback) {
+        const url = `${helper.getSiteUrl()}/charge/offices/${officeId}/agents`;
+
+        $.get(url)
+        .done(res => {
+            let html = `<option value="">${defaultLabel || '-- Office Card --'}</option>`;
+            res.forEach(agent => {
+                html += `<option value="${agent.id}" data-user-id="${agent.user_id}">${agent.name}</option>`;
+            });
+            selectInput.html(html);
+
+            if (typeof callback === 'function') {
+                callback(res);
+            }
+        })
+        .fail(() => {
+            helper.alertError('Unable to load agents.');
+        });
+    },
+
+    /**
+     * Initialize office charge source selector (office vs agent card)
+     * Wires up the cascading dropdown logic for office payment modals.
+     *
+     * @param {object} config - Configuration object:
+     *   - sourceSelect: ID of the charge source dropdown
+     *   - agentSection: ID of the agent select section div
+     *   - agentSelect: ID of the agent dropdown
+     *   - cardSelect: ID of the card profile dropdown
+     *   - useCardCheckbox: ID of the "use card" checkbox
+     *   - useAnotherCheckbox: ID of the "new card" checkbox
+     *   - officeId: The office ID for loading agents
+     *   - officeUserId: The office user ID for loading cards
+     */
+    initOfficeChargeSource(config) {
+        const sourceSelect = $(`#${config.sourceSelect}`);
+        const agentSection = $(`#${config.agentSection}`);
+        const agentSelect = $(`#${config.agentSelect}`);
+        const cardSelect = $(`#${config.cardSelect}`);
+
+        // Load agents for this office
+        Payment.loadAgentsForOffice(agentSelect, config.officeId, '-- Select Agent --');
+
+        // Source change handler
+        sourceSelect.off('change').on('change', function () {
+            const source = $(this).val();
+            cardSelect.empty();
+
+            if (source === 'agent') {
+                agentSection.show();
+                // Don't load cards yet, wait for agent selection
+            } else {
+                agentSection.hide();
+                agentSelect.val('');
+                // Load office's own cards
+                Payment.loadCardsFromChargeAPI(cardSelect, {
+                    source: 'office'
+                }, function (cards) {
+                    if (cards.length > 0) {
+                        $(`#${config.useCardCheckbox}`).prop('checked', true);
+                        cardSelect.prop('disabled', false);
+                        $(`.form-another-card input`).prop('disabled', true);
+                        $(`#${config.useAnotherCheckbox}`).prop('checked', false);
+                    }
+                });
+            }
+        });
+
+        // Agent change handler
+        agentSelect.off('change').on('change', function () {
+            const selectedOption = $(this).find(':selected');
+            const agentUserId = selectedOption.data('user-id');
+            cardSelect.empty();
+
+            if (agentUserId) {
+                Payment.loadCardsFromChargeAPI(cardSelect, {
+                    agent_user_id: agentUserId,
+                    source: 'agent'
+                }, function (cards) {
+                    if (cards.length > 0) {
+                        $(`#${config.useCardCheckbox}`).prop('checked', true);
+                        cardSelect.prop('disabled', false);
+                        $(`.form-another-card input`).prop('disabled', true);
+                        $(`#${config.useAnotherCheckbox}`).prop('checked', false);
+                    }
+                });
+            }
+        });
+    },
+
+    /**
+     * Initialize admin charge selectors (office + agent cascading dropdowns)
+     * Wires up the cascading dropdown logic for admin payment modals.
+     *
+     * @param {object} config - Configuration object:
+     *   - officeSelect: ID of the office dropdown
+     *   - agentSelect: ID of the agent dropdown
+     *   - cardSelect: ID of the card profile dropdown
+     *   - useCardCheckbox: ID of the "use card" checkbox
+     *   - useAnotherCheckbox: ID of the "new card" checkbox
+     */
+    initAdminChargeSelectors(config) {
+        const officeSelect = $(`#${config.officeSelect}`);
+        const agentSelect = $(`#${config.agentSelect}`);
+        const cardSelect = $(`#${config.cardSelect}`);
+
+        // Load offices
+        Payment.loadOfficesForAdmin(officeSelect);
+
+        // Office change handler
+        officeSelect.off('change').on('change', function () {
+            const selectedOption = $(this).find(':selected');
+            const officeId = $(this).val();
+            const officeUserId = selectedOption.data('user-id');
+            cardSelect.empty();
+            agentSelect.html('<option value="">-- Office Card --</option>');
+
+            if (officeId) {
+                // Load agents for the selected office
+                Payment.loadAgentsForOffice(agentSelect, officeId, '-- Office Card --');
+
+                // Load office cards by default
+                Payment.loadCardsFromChargeAPI(cardSelect, {
+                    office_user_id: officeUserId,
+                    source: 'office'
+                }, function (cards) {
+                    if (cards.length > 0) {
+                        $(`#${config.useCardCheckbox}`).prop('checked', true);
+                        cardSelect.prop('disabled', false);
+                        $(`.form-another-card input`).prop('disabled', true);
+                        $(`#${config.useAnotherCheckbox}`).prop('checked', false);
+                    }
+                });
+            }
+        });
+
+        // Agent change handler
+        agentSelect.off('change').on('change', function () {
+            const selectedOption = $(this).find(':selected');
+            const agentUserId = selectedOption.data('user-id');
+            const officeUserId = officeSelect.find(':selected').data('user-id');
+            cardSelect.empty();
+
+            if (agentUserId) {
+                // Load agent's cards
+                Payment.loadCardsFromChargeAPI(cardSelect, {
+                    agent_user_id: agentUserId,
+                    source: 'agent'
+                }, function (cards) {
+                    if (cards.length > 0) {
+                        $(`#${config.useCardCheckbox}`).prop('checked', true);
+                        cardSelect.prop('disabled', false);
+                        $(`.form-another-card input`).prop('disabled', true);
+                        $(`#${config.useAnotherCheckbox}`).prop('checked', false);
+                    }
+                });
+            } else if (officeUserId) {
+                // No agent selected - show office cards
+                Payment.loadCardsFromChargeAPI(cardSelect, {
+                    office_user_id: officeUserId,
+                    source: 'office'
+                }, function (cards) {
+                    if (cards.length > 0) {
+                        $(`#${config.useCardCheckbox}`).prop('checked', true);
+                        cardSelect.prop('disabled', false);
+                        $(`.form-another-card input`).prop('disabled', true);
+                        $(`#${config.useAnotherCheckbox}`).prop('checked', false);
+                    }
+                });
+            }
+        });
+    },
 }
 
 export default Payment;

@@ -13,6 +13,19 @@
                     @csrf
                     <input type="hidden" name="delivery_order_id"  >
                     <div class="row">
+                        <div class="col-12 mb-2" id="delivery_charge_source_section">
+                            <label class="text-primary font-px-18"><strong>Charge Card From</strong></label>
+                            <select id="delivery_charge_source_select" class="form-control">
+                                <option value="office" selected>Office Card</option>
+                                <option value="agent">Agent Card</option>
+                            </select>
+                        </div>
+                        <div class="col-12 mb-2" id="delivery_agent_select_section" style="display:none;">
+                            <label class="text-dark"><strong>Select Agent</strong></label>
+                            <select id="delivery_charge_agent_select" class="form-control">
+                                <option value="">-- Select Agent --</option>
+                            </select>
+                        </div>
                         <div class="col-12">
                             <input type="checkbox" name="delivery_payment_type" value="use_card" id="delivery_use_card_profile"
                                 class="m-0 mx-1 scale-1_5">
